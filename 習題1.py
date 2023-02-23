@@ -22,7 +22,6 @@ def loss(p):
 # p = [0.0, 0.0]
 # plearn = optimize(loss, p, max_loops=3000, dump_period=1)
 def optimize(P):
-    #更改參數的P1跟P2
 	
 	failCount = 0
 	MaxEpisodes = 10000
@@ -42,8 +41,6 @@ def optimize(P):
 		if failCount >= MaxEpisodes: 
 			return P
 		
-	#P1的更新方法
-	#P2的更新方法
 
 P = [0,0]
 p = optimize(P)
