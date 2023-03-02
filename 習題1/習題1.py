@@ -52,4 +52,3 @@ plt.plot(x, y, 'ro', label='Original data')
 plt.plot(x, y_predicted, label='Fitted line')
 plt.legend()
 plt.show()
-#參考周名初同學的code跟老師的指導完成的
