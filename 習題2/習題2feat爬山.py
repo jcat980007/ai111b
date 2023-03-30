@@ -1,44 +1,83 @@
+import math
 import random
+import matplotlib.pyplot as plt
 
-# 旅行點的坐標
+# 定义12个旅游点坐标
 points = [(2, 5), (5, 1), (7, 2), (3, 6), (8, 3), (6, 5), (1, 8), (4, 9), (9, 7), (8, 1), (3, 2), (6, 4)]
 
-# 計算旅行路径的總長度
-def calculate_distance(points):
-    distance = 0
-    for i in range(len(points)-1):
-        x1, y1 = points[i]
-        x2, y2 = points[i+1]
-        distance += ((x2-x1)**2 + (y2-y1)**2)**0.5
-    return distance
 
-# 交换操作
-def swap(points, i, j):
-    points[i], points[j] = points[j], points[i]
+def get_distance(point1, point2):
+    """
+    计算两个点之间的距离
+    """
+    return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
 
-# 爬山算法主程序
-def hill_climbing_algorithm(points):
-    current_route = points[:]
-    current_distance = calculate_distance(current_route)
-    while True:
-        neighbors = []
-        for i in range(len(current_route)-1):
-            for j in range(i+1, len(current_route)):
-                neighbor = current_route[:]
-                swap(neighbor, i, j)
-                neighbors.append(neighbor)
-        if not neighbors:
-            break
-        neighbor_distances = [calculate_distance(neighbor) for neighbor in neighbors]
-        best_neighbor_distance = min(neighbor_distances)
-        if best_neighbor_distance >= current_distance:
-            break
-        best_neighbor_index = neighbor_distances.index(best_neighbor_distance)
-        current_route = neighbors[best_neighbor_index]
-        current_distance = best_neighbor_distance
-    return current_route
 
-# 测試程序
-best_route = hill_climbing_algorithm(points)
-print(best_route)
-print(calculate_distance(best_route))
+def get_path_length(path):
+    """
+    计算路径长度
+    """
+    length = 0
+    for i in range(len(path) - 1):
+        length += get_distance(path[i], path[i + 1])
+    length += get_distance(path[-1], path[0])
+    return length
+
+
+def get_neighbors(path):
+    """
+    获取相邻路径
+    """
+    neighbors = []
+    for i in range(len(path)):
+        for j in range(i + 1, len(path)):
+            neighbor = path.copy()
+            neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
+            neighbors.append(neighbor)
+    return neighbors
+
+
+def hill_climbing(points, max_iter=100):
+    """
+    爬山算法
+    """
+    # 随机生成一个解
+    current_path = random.sample(points, len(points))
+    # 记录当前最优解
+    best_path = current_path
+    # 记录每次迭代的当前解
+    paths = [current_path]
+    # 记录当前最优解的长度
+    best_length = get_path_length(current_path)
+    # 迭代
+    for i in range(max_iter):
+        # 获取相邻路径
+        neighbors = get_neighbors(current_path)
+        # 选择最优路径作为下一次迭代的当前解
+        next_path = min(neighbors, key=lambda path: get_path_length(path))
+        # 如果找到了更优的解，更新最优解
+        if get_path_length(next_path) < best_length:
+            best_path = next_path
+            best_length = get_path_length(best_path)
+        # 将当前解更新为下一个解
+        current_path = next_path
+        # 记录当前解
+        paths.append(current_path)
+    return best_path, best_length, paths
+
+
+# 绘制搜索路径图
+plt.figure(figsize=(8, 8))
+for i in range(len(paths) - 1):
+    x = [point[0] for point in paths[i]]
+    y = [point[1] for point in paths[i]]
+    plt.plot(x + [x[0]], y + [y[0]], linestyle='dashed')
+x = [point[0] for point in best_path]
+y = [point[1] for point in best_path]
+plt.plot(x + [x[0]], y + [y[0]], color='red', linewidth=2)
+plt.scatter(x, y, color='black', s=80)
+plt.title(f'TSP - Hill Climbing Algorithm\nPath Length: {best_distance:.3f}')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+

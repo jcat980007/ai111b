@@ -1,17 +1,11 @@
 import random
+import math
+import matplotlib.pyplot as plt
 
-# 旅行點的坐標
+# 定义旅行点的坐标
 points = [(2, 5), (5, 1), (7, 2), (3, 6), (8, 3), (6, 5), (1, 8), (4, 9), (9, 7), (8, 1), (3, 2), (6, 4)]
 
-# 生成初始種群
-def generate_population(size):
-    population = []
-    for i in range(size):
-        individual = random.sample(points, len(points))
-        population.append(individual)
-    return population
-
-# 計算旅行路径的總長度
+# 计算旅行路径的总长度
 def calculate_distance(points):
     distance = 0
     for i in range(len(points)-1):
@@ -20,54 +14,90 @@ def calculate_distance(points):
         distance += ((x2-x1)**2 + (y2-y1)**2)**0.5
     return distance
 
-# 計算種群中每個個體的適應度
+# 生成初始种群
+def generate_initial_population(points, population_size):
+    population = []
+    for i in range(population_size):
+        individual = points[:]
+        random.shuffle(individual)
+        population.append(individual)
+    return population
+
+# 计算种群中每个个体的适应度
 def calculate_fitness(population):
-    fitness = []
+    fitness_scores = []
     for individual in population:
-        distance = calculate_distance(individual)
-        fitness.append(1/distance)
-    return fitness
+        fitness_scores.append(1 / calculate_distance(individual))
+    return fitness_scores
 
-# 選擇個體
-def select(population, fitness):
-    total_fitness = sum(fitness)
-    probabilities = [f/total_fitness for f in fitness]
-    selected = random.choices(population, probabilities, k=2)
-    return selected[0], selected[1]
+# 选择算子
+def selection(population, fitness_scores):
+    index1 = random.randint(0, len(population)-1)
+    index2 = random.randint(0, len(population)-1)
+    while index2 == index1:
+        index2 = random.randint(0, len(population)-1)
+    if fitness_scores[index1] > fitness_scores[index2]:
+        return population[index1]
+    else:
+        return population[index2]
 
-# 交叉操作
-def crossover(individual1, individual2):
-    point1 = random.randint(0, len(individual1)-1)
-    point2 = random.randint(point1, len(individual1)-1)
-    child = individual1[:point1] + individual2[point1:point2] + individual1[point2:]
+# 交叉算子
+def crossover(parent1, parent2):
+    index1 = random.randint(0, len(parent1)-1)
+    index2 = random.randint(0, len(parent1)-1)
+    while index2 == index1:
+        index2 = random.randint(0, len(parent1)-1)
+    if index1 > index2:
+        index1, index2 = index2, index1
+    child = [-1] * len(parent1)
+    for i in range(index1, index2+1):
+        child[i] = parent1[i]
+    j = 0
+    for i in range(len(parent2)):
+        if parent2[i] not in child:
+            while child[j] != -1:
+                j += 1
+            child[j] = parent2[i]
     return child
 
-# 變異操作
-def mutate(individual):
-    point1 = random.randint(0, len(individual)-1)
-    point2 = random.randint(0, len(individual)-1)
-    individual[point1], individual[point2] = individual[point2], individual[point1]
+# 变异算子
+def mutation(individual):
+    index1 = random.randint(0, len(individual)-1)
+    index2 = random.randint(0, len(individual)-1)
+    individual[index1], individual[index2] = individual[index2], individual[index1]
     return individual
 
-# 遗傳演算法主程序
-def genetic_algorithm(population_size, generations):
-    population = generate_population(population_size)
-    for i in range(generations):
-        fitness = calculate_fitness(population)
-        new_population = []
-        for j in range(population_size//2):
-            parent1, parent2 = select(population, fitness)
-            child1 = crossover(parent1, parent2)
-            child2 = crossover(parent2, parent1)
-            child1 = mutate(child1)
-            child2 = mutate(child2)
-            new_population.append(child1)
-            new_population.append(child2)
-        population = new_population
-    best_individual = max(population, key=calculate_fitness)
-    return best_individual
+# 遗传算法主程序
+def genetic_algorithm(points, population_size, num_generations):
+    # 生成初始种群
+    population = generate_initial_population(points, population_size)
+    for generation in range(num_generations):
+        # 计算种群中每个个体的适应度
+        fitness_scores = calculate_fitness(population)
+        # 选择下一代个体
+        next_generation = []
+        for i in range(population_size):
+            parent1 = selection(population, fitness_scores)
+            parent2 = selection(population, fitness_scores)
+            child = crossover(parent1, parent2)
+            if random.random() < 0.1:
+                child = mutation(child)
+            next_generation.append(child)
+        population = next_generation
+    # 返回最优个体
+    return max(population, key=lambda individual: 1 / calculate_distance(individual))
 
-# 测試程序
-best_route = genetic_algorithm(100, 1000)
-print(best_route)
-print(calculate_distance(best_route))
+points = [(2, 5), (5, 1), (7, 2), (3, 6), (8, 3), (6, 5), (1, 8), (4, 9), (9, 7), (8, 1), (3, 2), (6, 4)]
+
+population_size = 100
+num_generations = 500
+
+best_individual = genetic_algorithm(points, population_size, num_generations)
+
+# 将最优个体的路径画出来
+plt.figure(figsize=(8, 8))
+x = [point[0] for point in best_individual]
+y = [point[1] for point in best_individual]
+plt.plot(x, y, marker='o')
+plt.plot(x + [x[0]], y + [y[0]], linestyle='dashed')
+plt.show()
